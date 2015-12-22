@@ -52,9 +52,9 @@ castRay ro rd =
         t = tmin :: GLfloat
         m = -1 -- Start with no material
         V2 tResult mResult = foldl' (\(V2 t m) _i -> 
-            let res = mapToWorld (ro + rd * realToFrac t)
-                t' = t + res^._x
-                m' = res^._y
+            let res  = mapToWorld (ro + rd * realToFrac t)
+                t'   = t + res^._x
+                m'   = res^._y
                 done = res^._x < precis || t > tmax
             -- FIXME shouldn't calc res anymore once done is true
             in if done then V2 t m else V2 t' m'
@@ -127,56 +127,38 @@ smoothstep edge0 edge1 x0 = x * x * (3 - 2 * x)
 clamp :: Ord a => a -> a -> a -> a
 clamp n l h = max l (min h n)
 
-{-
+setCamera :: V3 GLfloat -> V3 GLfloat -> GLfloat -> M33 GLfloat
+setCamera ro ta cr = let
+    cw = normalize (ta - ro)
+    cp = V3 (sin cr) (cos cr) 0
+    cu = normalize (cross cw cp)
+    cv = normalize (cross cu cw)
+    in V3 cu cv cw
 
-vec3 render( in vec3 ro, in vec3 rd )
-{
-    vec3 col = vec3(0.7, 0.9, 1.0) + rd.y*0.8;
-    vec2 res = castRay(ro,rd);
-    float t = res.x;
-    float m = res.y;
-    if( m > -0.5 )
-    {
-        vec3 pos = ro + t*rd;
-        vec3 nor = calcNormal( pos );
-        vec3 ref = reflect( rd, nor );
-        
-        // material
-        col = 0.45 + 0.3*sin( vec3(0.05,0.08,0.10)*(m-1.0) );
-        
-        if( m<1.5 )
-        {
-            float f = mod( floor(5.0*pos.z) + floor(5.0*pos.x), 2.0);
-            col = 0.4 + 0.1*f*vec3(1.0);
-        }
+iResolution = V2 640 480
+iMouse = V2 320 240
+iGlobalTime = 0
 
-        // lighting
-        float occ = calcAO( pos, nor );
-        vec3  lig = normalize( vec3(-0.6, 0.7, -0.5) );
-        float amb = clamp( 0.5+0.5*nor.y, 0.0, 1.0 );
-        float dif = clamp( dot( nor, lig ), 0.0, 1.0 );
-        float bac = clamp( dot( nor, normalize(vec3(-lig.x,0.0,-lig.z))), 0.0, 1.0 )*clamp( 1.0-pos.y,0.0,1.0);
-        float dom = smoothstep( -0.1, 0.1, ref.y );
-        float fre = pow( clamp(1.0+dot(nor,rd),0.0,1.0), 2.0 );
-        float spe = pow( clamp( dot( ref, lig ), 0.0, 1.0 ),16.0);
+mainImage :: V2 GLfloat -> V4 GLfloat
+mainImage fragCoord = let
+    q = fragCoord^._xy / iResolution^._xy
+    p = (-1) + 2 * q & _x *~ (iResolution^._x / iResolution^._y)
+    mo = iMouse^._xy / iResolution^._xy
+    time = 15 + iGlobalTime
+    ro = V3
+        ((-0.5) + 3.5 * cos (0.1 * time + 6 * mo^._x))
+        (1 + 2 * mo^._y)
+        (0.5 + 3.5 * sin (0.1 * time + 6 * mo^._x))
+    ta = V3 (-0.5) (-0.4) 0.5
 
-        vec3 lin = vec3(0.0);
-        lin += 1.20*dif*vec3(1.00,0.85,0.55);
-        lin += 1.20*spe*vec3(1.00,0.85,0.55)*dif;
-        lin += 0.20*amb*vec3(0.50,0.70,1.00)*occ;
-        lin += 0.30*dom*vec3(0.50,0.70,1.00)*occ;
-        lin += 0.30*bac*vec3(0.25,0.25,0.25)*occ;
-        lin += 0.40*fre*vec3(1.00,1.00,1.00)*occ;
-        col = col*lin;
+    ca = setCamera ro ta 0
 
-        col = mix( col, vec3(0.8,0.9,1.0), 1.0-exp( -0.002*t*t ) );
+    rd = ca !* normalize (V3 (p^._x) (p^._y) 2)
+    col = render ro rd
+    col' = col ** 0.4545
+    fragColor = V4 (col^._x) (col^._y) (col^._z) 1
+    in fragColor
 
-    }
-
-    return vec3( clamp(col,0.0,1.0) );
-}
-
--}
 
 data Uniforms = Uniforms 
   { uMVP :: UniformLocation (M44 GLfloat) 

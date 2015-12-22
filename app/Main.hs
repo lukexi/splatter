@@ -7,7 +7,7 @@ import Graphics.UI.GLFW.Pal
 import Halive.Utils
 import Data.Fixed
 
-import Control.Lens
+import Control.Lens.Extra
 import Control.Monad
 import Data.Foldable
 

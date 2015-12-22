@@ -1,0 +1,10 @@
+resolver: nightly-2015-12-03
+packages:
+- '.'
+- '../gl-pal'
+- '../glfw-pal'
+- '../vr-pal'
+- '../openvr-hs'
+- '../lens-extra'
+- '../halive'
+- '../linear-extra'

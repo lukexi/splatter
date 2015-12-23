@@ -16,7 +16,7 @@ import Data.Foldable
 
 -- Primitives
 sdPlane :: V3 GLfloat -> GLfloat
-sdPlane = (^. _y)
+sdPlane = view _y
 
 sdSphere :: V3 GLfloat -> GLfloat -> GLfloat
 sdSphere p s = norm p - s
@@ -34,10 +34,10 @@ opRep p c = (mod' <$> p <*> c) - 0.5 * c
 -- World Map
 mapToWorld :: V3 GLfloat -> V2 GLfloat
 mapToWorld pos = 
-               --   opU (V2 (sdSphere (pos - (V3 0 0.25 0)) 0.25) 3)
-               -- . opU (V2 (sdSphere (pos - (V3 0 0.25 0)) 0.5 ) 8)
-               -- $ V2 (sdPlane pos) 1
-               V2 (sdPlane pos) 1
+                 opU (V2 (sdSphere (pos - (V3 0 0.25 0)) 0.25) 3)
+               . opU (V2 (sdSphere (pos - (V3 0 0.25 0)) 0.5 ) 8)
+               $ V2 (sdPlane pos) 1
+               
 
 castRay :: V3 GLfloat -> V3 GLfloat -> V2 GLfloat
 castRay ro rd = 
@@ -131,23 +131,23 @@ setCamera ro ta cr = let
     in V3 cu cv cw
 
 iResolution :: V2 GLfloat
-iResolution = V2 640 480
+iResolution = V2 resX resY
 iMouse :: V2 GLfloat
-iMouse = V2 320 240
+iMouse = V2 0 0
 iGlobalTime :: GLfloat
 iGlobalTime = 0
 
-mainImage :: V2 GLfloat -> V4 GLfloat
-mainImage fragCoord = let
+mainImage :: GLfloat -> V2 GLfloat -> V4 GLfloat
+mainImage time fragCoord = let
     -- q = fragCoord^._xy / iResolution^._xy
     q          = fragCoord
     V2 pX pY   = q & _x *~ (iResolution^._x / iResolution^._y)
     V2 moX moY = iMouse / iResolution
-    time       = 15 + iGlobalTime
+    time'      = 15 + time
     ro = V3
-        ((-0.5) + 3.5 * cos (0.1 * time + 6 * moX))
+        ((-0.5) + 3.5 * cos (0.1 * time' + 6 * moX))
         (1 + 2 * moY)
-        (0.5 + 3.5 * sin (0.1 * time + 6 * moX))
+        (0.5 + 3.5 * sin (0.1 * time' + 6 * moX))
     ta = V3 (-0.5) (-0.4) 0.5
 
     ca = setCamera ro ta 0
@@ -171,21 +171,22 @@ main = do
 
     -- cubeGeo       <- cubeGeometry 1 5
     -- cubeShape     <- (makeShape cubeGeo shader :: IO (Shape Uniforms))
-
+    
     (pointsVAO, colorBuffer, pointsVertCount) <- makeLine shader
     
     glEnable GL_DEPTH_TEST
     glClearColor 0.0 0.0 0.1 1
     whileVR vrPal $ \headM44 _hands -> do
-    
+        
         processEvents gpEvents $ closeOnEscape gpWindow
 
-        -- t <- getNow
+        t <- getNow
         let player = newPose & posPosition .~ V3 0 0 2
 
-        let newColors = map (mainImage . view _xy) pixelList
+        let newColors = map (mainImage t . view _xy) pixelList
+        
         bufferSubData colorBuffer (concatMap toList newColors)
-
+        
         let clearFrame = 
                 glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
 
@@ -203,9 +204,9 @@ main = do
             --     drawShape
 
 resX :: GLfloat
-resX = 640
+resX = 160
 resY :: GLfloat
-resY = 480
+resY = 120
 
 pixelList :: [V3 GLfloat]
 pixelList = [V3 (x/resX * 2 - 1) (y/resY * 2 - 1) 0 | x <- [0..resX], y <- [0..resY] ]

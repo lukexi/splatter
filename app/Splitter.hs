@@ -66,7 +66,7 @@ castRay ro rd =
                 m'       = rM
                 done     = rT < precis || t > tmax
             in if done then (t, m, pos) else (t', m', pos')
-            ) rayStart [0..10::Int]
+            ) rayStart [0..50::Int]
         color = if tResult > tmax then hslColor 0 0 0 0 else hslColor mResult 0.8 0.8 1
     in (tResult, color, posResult)
 

@@ -3,9 +3,9 @@
 uniform mat4 uMVP;
 
 in vec3 aPosition;
-in vec3 aColor;
+in vec4 aColor;
 
-out vec3 vColor;
+out vec4 vColor;
 
 void main( void ) { 
 

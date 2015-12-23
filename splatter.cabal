@@ -22,7 +22,7 @@ library
 executable splatter
   hs-source-dirs:      app
   main-is:             Main.hs
-  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  ghc-options:         -O2 -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
                      , splatter
                      , gl-pal
@@ -30,6 +30,7 @@ executable splatter
                      , lens-extra
                      , glfw-pal
                      , halive
+                     , mtl
   default-language:    Haskell2010
 
 source-repository head

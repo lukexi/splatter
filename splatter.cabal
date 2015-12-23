@@ -21,9 +21,23 @@ library
                      , lens-extra
   default-language:    Haskell2010
 
-executable splatter
+executable flatter
   hs-source-dirs:      app
-  main-is:             Main.hs
+  main-is:             Flatter.hs
+  ghc-options:         -O2 -Wall -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base
+                     , splatter
+                     , gl-pal
+                     , vr-pal
+                     , lens-extra
+                     , glfw-pal
+                     , halive
+                     , mtl
+  default-language:    Haskell2010
+
+executable splitter
+  hs-source-dirs:      app
+  main-is:             Splitter.hs
   ghc-options:         -O2 -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
                      , splatter

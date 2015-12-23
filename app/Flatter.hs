@@ -1,6 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE DeriveDataTypeable #-}
-module Main where
+
 import Graphics.GL.Pal
 import Graphics.VR.Pal
 import Graphics.UI.GLFW.Pal
@@ -135,7 +135,7 @@ main :: IO ()
 main = do
     vrPal@VRPal{..} <- reacquire 0 $ initVRPal "Geometry Test" [UseOpenVR]
 
-    shader        <- createShaderProgram "shaders/geo.vert" "shaders/geo.frag"
+    shader        <- createShaderProgram "app/Flatter.vert" "App/Flatter.frag"
     Uniforms{..}  <- acquireUniforms shader
 
     -- cubeGeo       <- cubeGeometry 1 5
@@ -152,7 +152,7 @@ main = do
         t <- getNow
         let player = newPose & posPosition .~ V3 0 0 2
 
-        let newColors = map (mainImage t . view _xy) pixelList
+        let newColors = map (mainImage t) pixelList
         
         bufferSubData colorBuffer (concatMap toList newColors)
         
@@ -177,13 +177,13 @@ resX = 160
 resY :: GLfloat
 resY = 120
 
-pixelList :: [V3 GLfloat]
-pixelList = [V3 (x/resX * 2 - 1) (y/resY * 2 - 1) 0 | x <- [0..resX], y <- [0..resY] ]
+pixelList :: [V2 GLfloat]
+pixelList = [V2 (x/resX * 2 - 1) (y/resY * 2 - 1) | x <- [0..resX], y <- [0..resY] ]
 
 makeLine :: Program -> IO (VertexArrayObject, ArrayBuffer, GLsizei)
 makeLine shader = do
 
-  let verts = pixelList
+  let verts = map (\(V2 x y) -> V3 x y 0) pixelList
       vertCount = length verts
       colors  = replicate vertCount (V4 0 1 1 1)
   

@@ -33,9 +33,11 @@ opRep p c = (mod' <$> p <*> c) - 0.5 * c
 
 -- World Map
 mapToWorld :: V3 GLfloat -> V2 GLfloat
-mapToWorld pos = opU (V2 (sdSphere (pos - (V3 0 0.25 0)) 0.25) 3)
-               . opU (V2 (sdSphere (pos - (V3 0 0.25 0)) 0.5 ) 8)
-               $ (V2 (sdPlane pos) 1)
+mapToWorld pos = 
+               --   opU (V2 (sdSphere (pos - (V3 0 0.25 0)) 0.25) 3)
+               -- . opU (V2 (sdSphere (pos - (V3 0 0.25 0)) 0.5 ) 8)
+               -- $ V2 (sdPlane pos) 1
+               V2 (sdPlane pos) 1
 
 castRay :: V3 GLfloat -> V3 GLfloat -> V2 GLfloat
 castRay ro rd = 

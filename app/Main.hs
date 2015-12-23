@@ -5,37 +5,18 @@ import Graphics.GL.Pal
 import Graphics.VR.Pal
 import Graphics.UI.GLFW.Pal
 import Halive.Utils
-import Data.Fixed
 
 import Control.Lens.Extra
 -- import Control.Monad
 -- import Control.Monad.Trans
 import Data.Foldable
-
-
-
--- Primitives
-sdPlane :: V3 GLfloat -> GLfloat
-sdPlane = view _y
-
-sdSphere :: V3 GLfloat -> GLfloat -> GLfloat
-sdSphere p s = norm p - s
-
--- Operators
-opS :: GLfloat -> GLfloat -> GLfloat
-opS d1 d2 = max (-d2) d1
-
-opU :: V2 GLfloat -> V2 GLfloat -> V2 GLfloat
-opU d1 d2 = if d1^._x < d2^._x then d1 else d2
-
-opRep :: V3 GLfloat -> V3 GLfloat -> V3 GLfloat
-opRep p c = (mod' <$> p <*> c) - 0.5 * c
+import Splatter
 
 -- World Map
 mapToWorld :: V3 GLfloat -> V2 GLfloat
 mapToWorld pos = 
                  opU (V2 (sdSphere (pos - (V3 0 0.25 0)) 0.25) 3)
-               . opU (V2 (sdSphere (pos - (V3 0 0.25 0)) 0.5 ) 8)
+               . opU (V2 (sdSphere (pos - (V3 1 0.5 0)) 0.5 ) 8)
                $ V2 (sdPlane pos) 1
                
 
@@ -52,7 +33,7 @@ castRay ro rd =
                 m'       = rY
                 done     = rX < precis || t > tmax
             in if done then V2 t m else V2 t' m'
-            ) rayStart [0..50::Int]
+            ) rayStart [0..10::Int]
         mResult' = if tResult > tmax then -1 else mResult
     in V2 tResult mResult'
 
@@ -108,19 +89,7 @@ render ro rd =
         col'' = mix col' (V3 0.8 0.9 1.0) (1.0 - exp (-0.002 * realToFrac t * realToFrac t))
     in clamp col'' 0 1
 
-mix :: Num a => a -> a -> a -> a
-mix x y a = x * (1 - a) + y * a
 
-reflect :: (Fractional (f a), Real a, Metric f) => f a -> f a -> f a
-reflect i n = i - 2 * (realToFrac (dot n i)) * n
-
-smoothstep :: (Fractional a, Ord a) => a -> a -> a -> a
-smoothstep edge0 edge1 x0 = x * x * (3 - 2 * x)
-    -- Scale, bias and saturate x to 0..1 range
-    where x = clamp ((x0 - edge0) / (edge1 - edge0)) 0 1
-
-clamp :: Ord a => a -> a -> a -> a
-clamp n l h = max l (min h n)
 
 setCamera :: V3 GLfloat -> V3 GLfloat -> GLfloat -> M33 GLfloat
 setCamera ro ta cr = let

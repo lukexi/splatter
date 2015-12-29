@@ -7,10 +7,10 @@ import Graphics.UI.GLFW.Pal
 import Halive.Utils
 
 import Control.Lens.Extra
--- import Control.Monad
--- import Control.Monad.Trans
 import Data.Foldable
 import Splatter
+
+
 
 -- World Map
 mapToWorld :: V3 GLfloat -> V2 GLfloat
@@ -152,7 +152,8 @@ main = do
         t <- getNow
         let player = newPose & posPosition .~ V3 0 0 2
 
-        let newColors = map (mainImage t) pixelList
+        -- let newColors = map (mainImage t) pixelList
+        let newColors = parMapChunk 256 rseq (mainImage t) pixelList
         
         bufferSubData colorBuffer (concatMap toList newColors)
         

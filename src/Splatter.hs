@@ -1,7 +1,9 @@
-module Splatter where
+module Splatter (module Splatter, module Exports) where
 import Graphics.GL.Pal
 import Control.Lens.Extra
 import Data.Fixed
+
+import Control.Parallel.Strategies as Exports hiding (dot) 
 
 -- Primitives
 sdPlane :: V3 GLfloat -> GLfloat
@@ -36,3 +38,10 @@ smoothstep edge0 edge1 x0 = x * x * (3 - 2 * x)
 
 clamp :: Ord a => a -> a -> a -> a
 clamp n l h = max l (min h n)
+
+
+
+
+-- Parallel helpers
+parMapChunk :: Int -> Strategy b -> (a -> b) -> [a] -> [b]
+parMapChunk n strat f = (`using` parListChunk n strat) . map f

@@ -45,20 +45,20 @@ mainImage time fragCoord = let
 
 -- World Map
 mapToWorld :: V3 GLfloat -> V2 GLfloat
-mapToWorld pos = 
+mapToWorld pos =
                  opU (V2 (sdSphere (pos - (V3 0 0.25 0)) 0.25) 0.2)
                . opU (V2 (sdSphere (pos - (V3 1 0.5 0)) 0.5 )  0.4)
                $      V2 (sdPlane pos)                         0.6
 
 
 castRay :: V3 GLfloat -> V3 GLfloat -> (GLfloat, V4 GLfloat, V3 GLfloat)
-castRay ro rd = 
+castRay ro rd =
     let tmin      = 1
         tmax      = 20
         precis    = 0.002
         rayStart  = (tmin, 0.8, 0, False) -- start at tmin with no material
         (tfinal, hitMaterial, hitPosition, _) = foldl' (\(t, m, pos, haveHit) _ ->
-            if haveHit 
+            if haveHit
                 then (t, m, pos, haveHit)
                 else
                     let pos' = ro + rd * realToFrac t
@@ -68,11 +68,11 @@ castRay ro rd =
                         done     = rT < precis || t > tmax
                     in if done then (t, m, pos, True) else (t', m', pos', False)
             ) rayStart [ 0..25 :: Int ]
-        color = if tfinal > tmax then hslColor 0 0 0 0 else hslColor hitMaterial 0.8 0.8 1
+        color = if tfinal > tmax then colorHSLA 0 0 0 0 else colorHSLA hitMaterial 0.8 0.8 1
     in (tfinal, color, hitPosition)
 
-data Uniforms = Uniforms 
-  { uMVP :: UniformLocation (M44 GLfloat) 
+data Uniforms = Uniforms
+  { uMVP :: UniformLocation (M44 GLfloat)
   } deriving Data
 
 main :: IO ()
@@ -84,13 +84,13 @@ main = do
 
     -- cubeGeo       <- cubeGeometry 1 5
     -- cubeShape     <- (makeShape cubeGeo shader :: IO (Shape Uniforms))
-    
+
     (pointsVAO, positionsBuffer, colorsBuffer, pointsVertCount) <- makeCloud shader
-    
+
     glEnable GL_DEPTH_TEST
     glClearColor 0.0 0.0 0.1 1
     whileVR vrPal $ \headM44 _hands -> do
-        
+
         processEvents gpEvents $ closeOnEscape gpWindow
 
         t <- getNow
@@ -102,8 +102,8 @@ main = do
 
         bufferSubData colorsBuffer    (concatMap toList colors)
         bufferSubData positionsBuffer (concatMap toList positions)
-        
-        let clearFrame = 
+
+        let clearFrame =
                 glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
 
 
@@ -111,7 +111,7 @@ main = do
             useProgram shader
             let model = identity
             uniformM44 uMVP (projM44 !*! eyeViewM44 !*! model)
-            withVAO pointsVAO $ 
+            withVAO pointsVAO $
               glDrawArrays GL_POINTS 0 pointsVertCount
 
 
@@ -125,19 +125,19 @@ pixelList = [V2 (x/resX * 2 - 1) (y/resY * 2 - 1) | x <- [0..resX], y <- [0..res
 
 makeCloud :: Program -> IO (VertexArrayObject, ArrayBuffer, ArrayBuffer, GLsizei)
 makeCloud shader = do
-  
+
     let verts = map (\(V2 x y) -> V3 x y 0) pixelList
         vertCount = length verts
         colors  = replicate vertCount (V4 0 1 1 1)
-    
+
     positionsBuffer <- bufferData GL_DYNAMIC_DRAW (concatMap toList verts   :: [GLfloat])
     colorsBuffer    <- bufferData GL_DYNAMIC_DRAW (concatMap toList colors  :: [GLfloat])
-  
+
     vao <- newVAO
     withVAO vao $ do
         withArrayBuffer positionsBuffer $ assignFloatAttribute shader "aPosition" GL_FLOAT 3
         withArrayBuffer colorsBuffer    $ assignFloatAttribute shader "aColor"    GL_FLOAT 4
-  
+
     return (vao, positionsBuffer, colorsBuffer, fromIntegral vertCount)
-  
+
 

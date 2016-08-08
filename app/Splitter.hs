@@ -1,9 +1,9 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE LambdaCase #-}
 
 import Graphics.GL.Pal
-import Graphics.VR.Pal
-import Graphics.UI.GLFW.Pal
+import Graphics.VR.Pal hiding (getNow)
 import Halive.Utils
 
 import Control.Lens.Extra
@@ -77,7 +77,7 @@ data Uniforms = Uniforms
 
 main :: IO ()
 main = do
-    vrPal@VRPal{..} <- reacquire 0 $ initVRPal "Geometry Test" [UseOpenVR]
+    vrPal@VRPal{..} <- reacquire 0 $ initVRPal "Splitter"
 
     shader        <- createShaderProgram "app/Splitter.vert" "app/Splitter.frag"
     Uniforms{..}  <- acquireUniforms shader
@@ -89,12 +89,17 @@ main = do
 
     glEnable GL_DEPTH_TEST
     glClearColor 0.0 0.0 0.1 1
-    whileVR vrPal $ \headM44 _hands -> do
+    whileWindow gpWindow $ do
 
-        processEvents gpEvents $ closeOnEscape gpWindow
+        let playerM44 = translateMatrix (V3 0 0.5 2)
+        (headM44, events) <- tickVR vrPal playerM44
+
+        forM_ events $ \case
+            GLFWEvent e -> closeOnEscape gpWindow e
+            _ -> return ()
+
 
         t <- getNow
-        let player = newPose & posPosition .~ V3 0 0.5 2
 
         let results = parMapChunk 256 rseq (mainImage t) pixelList
             colors = map (\(_, col, _) -> col) results
@@ -103,11 +108,8 @@ main = do
         bufferSubData colorsBuffer    (concatMap toList colors)
         bufferSubData positionsBuffer (concatMap toList positions)
 
-        let clearFrame =
-                glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
-
-
-        renderWith vrPal player headM44 clearFrame $ \projM44 eyeViewM44 -> do
+        renderWith vrPal headM44 $ \projM44 eyeViewM44 _ _ -> do
+            glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
             useProgram shader
             let model = identity
             uniformM44 uMVP (projM44 !*! eyeViewM44 !*! model)
@@ -123,7 +125,7 @@ resY = 120
 pixelList :: [V2 GLfloat]
 pixelList = [V2 (x/resX * 2 - 1) (y/resY * 2 - 1) | x <- [0..resX], y <- [0..resY] ]
 
-makeCloud :: Program -> IO (VertexArrayObject, ArrayBuffer, ArrayBuffer, GLsizei)
+makeCloud :: Program -> IO (VertexArrayObject, ArrayBuffer GLfloat, ArrayBuffer GLfloat, GLsizei)
 makeCloud shader = do
 
     let verts = map (\(V2 x y) -> V3 x y 0) pixelList
